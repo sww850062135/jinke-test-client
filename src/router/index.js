@@ -111,6 +111,7 @@ export const constantRouterMap = [
 export default new Router({
   // mode: 'history', //后端支持可开
   scrollBehavior: () => ({ y: 0 }),
+  base: '/VueTest',
   routes: constantRouterMap
 })
 

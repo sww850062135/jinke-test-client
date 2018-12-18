@@ -2,7 +2,7 @@
  * 金科小区管理相关api
  */
 import axios from 'axios'
-axios.defaults.baseURL = 'http://127.0.0.1:8585';
+axios.defaults.baseURL = 'http://10.30.30.9:8585';
 let config = { headers:{ 'content-type': 'application/json;charset=UTF-8' } };
 
 /**
