@@ -21,9 +21,9 @@
         <el-form-item style="padding-top: 20px; padding-left: 20px">
           <el-button type="primary" @click="mappedOneData">数据映射</el-button>
         </el-form-item>
-        <el-form-item style="padding-top: 20px; padding-left: 20px">
+        <!--<el-form-item style="padding-top: 20px; padding-left: 20px">
           <el-button type="primary" @click="mappedData">数据全部映射</el-button>
-        </el-form-item>
+        </el-form-item>-->
       </el-form>
     </el-col>
     <!--列表-->
@@ -97,6 +97,7 @@ export default {
     selsChange: function (sels) {
       this.sels = sels;
     },
+
     /*获取小区数据*/
     searchCommunity: function () {
       const that = this;
@@ -131,6 +132,7 @@ export default {
         })
       }
     },
+
     //复选框状态改变
     changeFun(val) {
       this.multipleSelection = val;
@@ -148,16 +150,22 @@ export default {
         that.$message({message: "请先选择小区数据!", type: 'warning', center: true})
       }else {
         mappedAJBCommunity(params).then(data =>{
-          console.log("所传递的映射小区数据是: ",params.jkCommunityBaseList);
-          const {msg1, result} = data;
-          that.$message({message: msg1, type: 'success', center: true});
-          console.log("映射好的安居宝小区数据: ", result);
+          console.log("所传递的金科小区数据是: ",params.jkCommunityBaseList);
+          const {msg, msg1, status, result} = data;
+          if (status === 'success') {
+            that.$message({message: msg1, type: 'success', center: true});
+            console.log("映射好的安居宝小区数据: ", result);
+          }else {
+            that.$message({message: msg, type: 'error', center: true});
+          }
         });
       }
     },
-    mappedData () {
 
-    },
+    /*//映射全部小区数据
+    mappedData () {
+    },*/
+
     //查询小区id和name列表
     selectCommunityIdAndName (){
       const params ={};

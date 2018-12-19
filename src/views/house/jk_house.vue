@@ -48,9 +48,9 @@
         <el-form-item style="padding-top: 20px; padding-left: 20px">
           <el-button type="primary" @click="mappedOneData">数据映射</el-button>
         </el-form-item>
-        <el-form-item style="padding-top: 20px; padding-left: 20px">
+        <!--<el-form-item style="padding-top: 20px; padding-left: 20px">
           <el-button type="primary" @click="mappedData">数据全部映射</el-button>
-        </el-form-item>
+        </el-form-item>-->
       </el-form>
     </el-col>
     <!--列表-->
@@ -65,7 +65,8 @@
       <el-table-column prop="buildId" label="build_id" width="200" sortable></el-table-column>
       <el-table-column prop="buildName" label="build_name" width="130" sortable></el-table-column>
       <el-table-column prop="projectId" label="project_id" width="200" sortable></el-table-column>
-      <el-table-column prop="projectName" label="project_name" sortable></el-table-column>
+      <el-table-column prop="projectName" label="project_name" width="200" sortable></el-table-column>
+      <el-table-column prop="companyName" label="company_name" width="200" sortable></el-table-column>
       <el-table-column prop="syncTime" label="sync_time" width="200" sortable></el-table-column>
     </el-table>
     <!--分页-->
@@ -89,6 +90,7 @@
 <script>
   import { getJKCommunityIdAndNameList, getJKBuildingIdAndNameList, getJKUnitIdAndNameList, getJKHouseIdAndNameList,
            getJKHouseList, getJKHouseByHouseId, mappedAJBHouse } from '@/api/jinke'
+  import { mappedAJBBuilding, mappedAJBCommunity, mappedAJBUnit} from "../../api/jinke";
   export default {
     data: function () {
       return {
@@ -103,6 +105,9 @@
         Unit_options: [],
         House_options: [],
         multipleSelection: [],
+        jkCommunityBaseList: [],
+        jkBuildingBaseList: [],
+        jkUnitBaseList: [],
         jkHouseBaseList: [],
         pageSize: 10,   //每页数据大小
         currentPage: 1,  //当前页
@@ -169,36 +174,112 @@
           });
         }
       },
+
       //复选框状态改变
       changeFun(val) {
         this.multipleSelection = val;
         console.log("所选中的数据是: ", this.multipleSelection);
       },
+
+      //拉取金科房屋数据
       getNewData() {
       },
+
+      //映射金科房屋数据
       mappedOneData() {
         const that = this;
         let params = {
+          unitId: that.JKUnit,
           buildId: that.JKBuilding,
           jkHouseBaseList: that.multipleSelection,
         };
-        if (params.jkHouseBaseList.length === 0 || params.buildId === '') {
+        if (params.jkHouseBaseList.length === 0 || params.buildId === '' || params.unitId === '') {
           that.$message({message: "请先选择房屋!", type: 'warning', center: true})
         }else {
           mappedAJBHouse(params).then(data =>{
             console.log("所传递的金科房屋数据是: ",params.jkHouseBaseList);
-            const {msg1, result} = data;
-            that.$message({message: msg1, type: 'success', center: true});
-            console.log("映射好的安居宝房屋数据: ", result);
+            const {msg, msg1, status, status1, result, result1, result2} = data;
+            if (status === 'success') {
+              if (status1 === 'success') {
+                that.$message({message: msg1, type: 'success', center: true});
+                console.log("映射好的安居宝房屋数据: ", result);
+              } else {
+                that.$confirm('映射失败,该单元上的小区或楼栋或单元还未映射!是否先映射该小区、楼栋和单元?', '提示', {
+                  confirmButtonText: '是',
+                  cancelButtonText: '否',
+                  type: 'warning'
+                }).then(() => {
+                  const params = {
+                    jkCommunityBaseList: result,   //后端返回的单元对应的小区数据
+                    jkBuildingBaseList: result1,   //后端返回的单元对应的楼栋数据
+                    jkUnitBaseList: result2,       //后端返回的单元对应的单元数据
+                    projectId: that.JKCommunity,   //该金科房屋对应的金科小区号
+                    buildId: that.JKBuilding,      //该金科房屋对应的金科楼栋号
+                  };
+                  //映射房屋对应的小区
+                  mappedAJBCommunity(params).then(data => {
+                    console.log("所传递的金科小区数据是: ", params.jkCommunityBaseList);
+                    const {msg, msg1, status, result} = data;
+                    if (status === 'success') {
+                      //that.$message({message: msg1, type: 'success', center: true});
+                      console.log("映射好的安居宝小区数据: ", result);
+                      //映射房屋对应的楼栋
+                      mappedAJBBuilding(params).then(data => {
+                        console.log("所传递的金科楼栋数据是: ", params.jkBuildingBaseList);
+                        const {msg, msg1, status, result} = data;
+                        if (status === 'success') {
+                          //that.$message({message: msg1, type: 'success', center: true});
+                          console.log("映射好的安居宝楼栋数据: ", result);
+                          //映射房屋对应的单元
+                          mappedAJBUnit(params).then(data => {
+                            console.log("所传递的金科单元数据是: ", params.jkUnitBaseList);
+                            const {msg, msg1, status, status1, result} = data;
+                            if (status === 'success') {
+                              //that.$message({message: msg1, type: 'success', center: true});
+                              that.$confirm('该房屋上的小区、楼栋或单元已完成映射!可继续映射房屋操作!', '提示', {
+                                confirmButtonText: '确定',
+                                cancelButtonText: '取消',
+                                type: 'success'
+                              }).then(() => {
+                                that.$message({
+                                  message: '该房屋上的小区或楼栋或单元已完成映射!可继续映射房屋操作!',
+                                  type: 'success',
+                                  center: true
+                                });
+                              });
+                              console.log("映射好的安居宝单元数据: ", result);
+                            } else {
+                              that.$message({message: msg, type: 'error', center: true});
+                            }
+                          });
+                        } else {
+                          that.$message({message: msg, type: 'error', center: true});
+                        }
+                      });
+                    } else {
+                      that.$message({message: msg, type: 'error', center: true});
+                    }
+                  });
+                }).catch(() => {
+                  that.$message({message: '已取消先映射该小区、楼栋和单元!', type: 'warning', center: true});
+                });
+              }
+            }else {
+              that.$message({message: msg, type: 'error', center: true});
+            }
           });
         }
       },
+
+     /* //映射全部数据
       mappedData() {
-      },
+      },*/
+
       //复选框状态改变
       changeFun(val) {
         this.multipleSelection = val;
       },
+
       //查询一个小区的id和name列表
       selectCommunityIdAndName() {
         const params = {};
@@ -212,6 +293,7 @@
           }
         })
       },
+
       //查询一个小区下的楼栋id和name列表
       selectBuildingIdAndName() {
         const params = {
@@ -227,6 +309,7 @@
           }
         })
       },
+
       //查询一个楼栋下的单元id和name列表
       selectUnitIdAndName() {
         const params = {
@@ -242,6 +325,7 @@
           }
         });
       },
+
       //查询一个单元下的房屋id和name列表
       selectHouseIdAndName() {
         const params = {
